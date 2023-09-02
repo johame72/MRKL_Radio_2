@@ -1,18 +1,19 @@
 import dotenv from 'dotenv';
-dotenv.config();
-
 import express from 'express';
 import icy from 'icy';
-import bodyParser from 'body-parser'; // Newly added
-import axios from 'axios'; // Newly added (You'll need to install this)
+import axios from 'axios';
+
+dotenv.config();
 
 const app = express();
-const PORT = 8106;
+const PORT = 8105;
 
-// Add body-parser middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Middleware setup
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
+// Define the radio stations
 const STATIONS = {
     "KEXP": {
         name: "KEXP Seattle",
@@ -105,12 +106,17 @@ const STATIONS = {
         type: "audio/mp3"
     }
 };
-    
 
-// New endpoint to fetch artist news
+
+// Endpoint to serve the main page
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/public/index.html');
+});
+
+// Endpoint to fetch artist news
 app.get('/artist-news/:artistName', async (req, res) => {
-    const artistName = req.params.artistName;
-    const API_KEY = 'YOUR_API_KEY_HERE';
+    const { artistName } = req.params;
+    const API_KEY = process.env.NEWS_API_KEY;
     const end_date = new Date().toISOString();
     const start_date = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const ENDPOINT = `https://newsapi.org/v2/everything?q=${artistName}&from=${start_date}&to=${end_date}&apiKey=${API_KEY}`;
@@ -119,40 +125,34 @@ app.get('/artist-news/:artistName', async (req, res) => {
         const response = await axios.get(ENDPOINT);
         res.json(response.data.articles);
     } catch (error) {
+        console.error("Error fetching news:", error);
         res.status(500).json({ error: 'Failed to fetch news' });
     }
 });
 
-const clients = {};
-
-// Serve static files from the 'public' directory
-app.use(express.static('public'));
-
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
-});
-
 // Placeholder endpoint for artist tour info
 app.get('/artist-tour/:artistName', (req, res) => {
-    // Placeholder data for now
     res.json({ tourDates: "Sample tour date information" });
 });
 
+// Endpoint to fetch radio station metadata
 app.get('/metadata/:station', (req, res) => {
-    const stationKey = req.params.station;
-    const station = STATIONS[stationKey];
-    if (!station) {
+    const { station } = req.params;
+    const stationData = STATIONS[station];
+    
+    if (!stationData) {
         return res.status(404).send("Station not found");
     }
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders(); // This is important to keep the connection alive
+    res.flushHeaders(); // Important to keep the connection alive
 
-    let streamConnection;  // Define a variable to hold the icy stream connection.
+    let streamConnection;  // Variable to hold the icy stream connection
 
-    icy.get(station.url, (streamRes) => {
+    // Make the request to the icy stream
+    icy.get(stationData.url, (streamRes) => {
         streamConnection = streamRes;  // Store the icy connection
 
         streamRes.on('metadata', (metadata) => {
@@ -161,9 +161,12 @@ app.get('/metadata/:station', (req, res) => {
                 res.write(`data: ${JSON.stringify({ artist: parsed.StreamTitle })}\n\n`);
             }
         });
+    }).on('error', (err) => {
+        console.error('Error with the icy stream:', err);
+        res.status(500).send('Failed to connect to the stream');
     });
 
-    // Listen for the 'close' event on the request. This event is triggered when the client disconnects.
+    // Handle client disconnect
     req.on('close', () => {
         if (streamConnection) {
             streamConnection.destroy();  // Close the icy stream connection
@@ -171,6 +174,7 @@ app.get('/metadata/:station', (req, res) => {
     });
 });
 
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

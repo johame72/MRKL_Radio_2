@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MRKL RADIO</title>
     <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" />
-    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+        integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
     <link rel="stylesheet" href="player.css">
     <style>
         body {
@@ -31,12 +32,25 @@
         .radio-player {
             margin-bottom: auto; /* This pushes the player upwards */
         }
-     </style>
+    </style>
 </head>
 
 <body>
     <div class="radio-title">
         MRKL RADIO
+        <div class="artist-news">
+            <h3>Latest News</h3>
+            <ul id="newsList">
+                <!-- News articles will be populated here by the player.js script -->
+            </ul>
+        </div>
+
+        <div class="artist-tour">
+            <h3>Upcoming Tour Dates</h3>
+            <ul id="tourList">
+                <!-- Tour dates will be populated here by the player.js script -->
+            </ul>
+        </div>
     </div>
     <div class="radio-player">
         <audio src="" class="visually-hidden" id="stream"></audio>
@@ -56,7 +70,8 @@
                     <button name="mute" class="button mute-button" aria-label="Mute/unmute">
                         <i class="fas fa-volume-down" aria-hidden="true"></i>
                     </button>
-                    <input type="range" name="volume" class="volume" min="0" max="1" step="0.05" value="1.0" aria-label="Volume">
+                    <input type="range" name="volume" class="volume" min="0" max="1" step="0.05" value="1.0"
+                        aria-label="Volume">
                 </div>
             </div>
         </div>
@@ -68,6 +83,3 @@
 </body>
 
 </html>
-
-
-

@@ -143,12 +143,32 @@ document.addEventListener('DOMContentLoaded', () => {
             eventSource.close();
         }
 
-        eventSource = new EventSource(`/metadata/${stationKey}`);
+eventSource = new EventSource(`/metadata/${stationKey}`);
         eventSource.onmessage = event => {
             const data = JSON.parse(event.data);
             console.log("Data received from EventSource:", data);  // Logging data from EventSource
             if (data.artist) {
                 currentlyPlayingArtist.innerText = data.artist;
+
+                // Fetch news for the artist
+                fetch(`/artist-news/${encodeURIComponent(data.artist)}`)
+                    .then(response => response.json())
+                    .then(articles => {
+                        // Display the news articles in your UI (this is a basic example)
+                        const newsList = document.getElementById('newsList');
+                        newsList.innerHTML = articles.map(article => `<li><a href="${article.url}" target="_blank">${article.title}</a></li>`).join('');
+                    })
+                    .catch(error => console.error("Failed to fetch artist news", error));
+
+                // Fetch tour dates for the artist (placeholder for now)
+                fetch(`/artist-tour/${encodeURIComponent(data.artist)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Display the tour dates in your UI (this is a basic example)
+                        const tourList = document.getElementById('tourList');
+                        tourList.innerHTML = `<li>${data.tourDates}</li>`;
+                    })
+                    .catch(error => console.error("Failed to fetch artist tour dates", error));
             }
         };
 
@@ -188,8 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(fetchMetadataTimeout); // Clear the previous timeout
         fetchMetadata(); // Fetch metadata for the new station
     };
-    
 
+    
     const updatePlayPauseIcon = () => {
         if (audio.paused) {
             playPauseButtonIcon.classList.remove('fa-pause');
@@ -249,6 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     setupMediaSessionHandlers();
-    
+
     initializeStation("KEXP");
 });
